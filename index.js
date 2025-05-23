@@ -1,37 +1,84 @@
 // index.js
 
-// Step 1: Fetch Data from the API
-// - Create a function `fetchWeatherData(city)`
-// - Use fetch() to retrieve data from the OpenWeather API
-// - Handle the API response and parse the JSON
-// - Log the data to the console for testing
+//Replace with your actual OpenWeather API key
+const apiKey = '75246ffccb309c41f3748668386adb75';
 
-// Step 2: Display Weather Data on the Page
-// - Create a function `displayWeather(data)`
-// - Dynamically update the DOM with weather details (e.g., temperature, humidity, weather description)
-// - Ensure the function can handle the data format provided by the API
+//Fetch Weather Data from the API
+async function fetchWeatherData(city) {
+  try {
+    showLoadingSpinner();
 
-// Step 3: Handle User Input
-// - Add an event listener to the button to capture user input
-// - Retrieve the value from the input field
-// - Call `fetchWeatherData(city)` with the user-provided city name
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=Imperial&appid=${apiKey}`
+    );
 
-// Step 4: Implement Error Handling
-// - Create a function `displayError(message)`
-// - Handle invalid city names or network issues
-// - Dynamically display error messages in a dedicated section of the page
+    if (!response.ok) {
+      throw new Error('City not found');
+    }
 
-// Step 5: Optimize Code for Maintainability
-// - Refactor repetitive code into reusable functions
-// - Use async/await for better readability and to handle asynchronous operations
-// - Ensure all reusable functions are modular and clearly named
+    const data = await response.json();
+    displayWeather(data);
+  } catch (error) {
+    displayError(error.message);
+  } finally {
+    hideLoadingSpinner();
+  }
+}
 
-// BONUS: Loading Indicator
-// - Optionally, add a loading spinner or text while the API request is in progress
+//Display Weather Data on the Page
+function displayWeather(data) {
+  const weatherDisplay = document.getElementById('weather-display');
+  const { name, main, weather } = data;
+  const temperature = main.temp;
+  const humidity = main.humidity;
+  const description = weather[0].description;
 
-// BONUS: Additional Features
-// - Explore adding more features, such as displaying additional weather details (e.g., wind speed, sunrise/sunset)
-// - Handle edge cases, such as empty input or API rate limits
+  weatherDisplay.innerHTML = `
+    <h2>Weather in ${name}</h2>
+    <p><strong>Temperature:</strong> ${temperature}°F</p>
+    <p><strong>Humidity:</strong> ${humidity}%</p>
+    <p><strong>Condition:</strong> ${description}</p>
+  `;
+}
 
-// Event Listener for Fetch Button
-// - Attach the main event listener to the button to start the process
+//Error Handling
+function displayError(message) {
+  const errorElement = document.getElementById('error-message');
+  errorElement.textContent = message;
+  errorElement.classList.remove('hidden');
+
+//Optional: Clear previous weather results
+  document.getElementById('weather-display').innerHTML = '';
+}
+
+//Hide error message when needed
+function clearError() {
+  const errorElement = document.getElementById('error-message');
+  errorElement.classList.add('hidden');
+  errorElement.textContent = '';
+}
+
+//Loading Spinner
+function showLoadingSpinner() {
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) spinner.style.display = 'block';
+}
+
+function hideLoadingSpinner() {
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) spinner.style.display = 'none';
+}
+
+//Handle User Input
+document.getElementById('fetch-weather').addEventListener('click', () => {
+  const input = document.getElementById('city-input');
+  const city = input.value.trim();
+
+  if (!city) {
+    displayError('Please enter a city name');
+    return;
+  }
+
+  clearError();
+  fetchWeatherData(city);
+});
